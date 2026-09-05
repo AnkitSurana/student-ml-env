@@ -5,12 +5,9 @@ usage() {
     cat <<'EOF'
 Usage: ./ml-env <command> [arguments]
 
-Run from the repository checkout. Service commands prompt for configuration,
-write .env, start the selected Compose service, and validate connectivity.
+Run from the repository checkout for developer-only Compose lifecycle tasks.
 
 Commands:
-  service NAME   Configure and start one service
-  services       Choose a service interactively
   start          Start the complete Compose environment
   stop           Stop the complete Compose environment
   status         Show service status
@@ -19,9 +16,6 @@ EOF
 }
 
 case "${1:-help}" in
-    service|services)
-        exec docker compose exec -it ml-ide ml-env "$@"
-        ;;
     start)
         exec docker compose up -d
         ;;

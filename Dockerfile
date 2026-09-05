@@ -11,8 +11,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
-    docker-compose \
-    docker.io \
     ffmpeg \
     git \
     graphviz \
@@ -37,7 +35,6 @@ RUN pip install --upgrade pip setuptools wheel && \
     npm cache clean --force
 
 COPY docker/ml-env /usr/local/bin/ml-env
-COPY docker-compose.yml /workspace/docker-compose.yml
 RUN chmod +x /usr/local/bin/ml-env && \
     mkdir -p /workspace/.jupyter /workspace/data /workspace/datasets /workspace/logs /workspace/models /workspace/notebooks /workspace/projects && \
     printf '%s\n' \

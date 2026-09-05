@@ -2,7 +2,7 @@
 
 ## Docker Hub image
 
-Install Docker Desktop (Windows/macOS) or Docker Engine and Compose (Linux).
+Install Docker Desktop (Windows/macOS) or Docker Engine (Linux).
 The image does not require API keys or a repository checkout for the IDE:
 
 ```bash
@@ -59,7 +59,7 @@ export MODEL_NAME='local-model'
 ml-env python /workspace/projects/example.py
 ```
 
-## Compose with the complete environment
+## Developer-only Compose environment
 
 Clone the repository when you want persistent bind mounts and database
 containers:
@@ -79,24 +79,19 @@ docker compose exec ml-ide ml-env jupyter
 docker compose ps
 ```
 
-From the repository directory, service controls are also available outside
-the container:
+Compose is not required for Docker Hub users. Developers can use it to build
+the image locally and run the bundled database services:
 
 ```bash
-./ml-env service postgres
-./ml-env services
+docker compose config
+docker compose build ml-ide
+docker compose up -d
+docker compose ps
+docker compose down
 ```
 
-On Windows PowerShell, run the wrapper through Git Bash/WSL, or use the
-equivalent Docker command:
-
-```powershell
-docker compose exec -it ml-ide ml-env service postgres
-docker compose exec -it ml-ide ml-env services
-```
-
-No `.env` file is required. Copy `.env.example` to `.env` only when you want
-to set optional keys or override ports and local database credentials.
+No `.env` file is required. Copy `.env.example` to `.env` only for local
+development overrides.
 
 ## Local build
 
