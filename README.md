@@ -74,6 +74,35 @@ docker compose exec ml-ide ml-env streamlit /workspace/projects/app.py
 docker compose exec ml-ide ml-env mlflow
 ```
 
+You can also start Compose services from inside the IDE container. The Compose
+setup mounts the Docker socket for this purpose:
+
+```bash
+docker compose exec ml-ide ml-env service postgres
+docker compose exec ml-ide ml-env service qdrant
+docker compose exec ml-ide ml-env service redis
+```
+
+Use a technology-stack preset when you want a prepared group:
+
+```bash
+docker compose exec ml-ide ml-env stack python_only
+docker compose exec ml-ide ml-env stack data_analyst
+docker compose exec ml-ide ml-env stack machine_learning
+docker compose exec ml-ide ml-env stack genai
+docker compose exec ml-ide ml-env stack ai
+```
+
+You can still start one service at any time; presets do not force you to run
+the whole environment. Supported services include `postgres`, `mongodb`,
+`redis`, `chromadb`, `qdrant`, `weaviate`, `milvus`, `pgadmin`, and
+`mongo-express`.
+
+These in-container service controls are available in the Compose image because
+it mounts `/var/run/docker.sock`. A standalone Docker Hub `docker run` does
+not mount that socket, so use Compose when you want `ml-env service` or
+`ml-env stack` to start sibling containers.
+
 Open JupyterLab at <http://localhost:8888>, TensorBoard at
 <http://localhost:6006>, Streamlit at <http://localhost:8501>, and MLflow at
 <http://localhost:5000>. All application ports are already published by
@@ -100,8 +129,10 @@ ml-env python /workspace/projects/example.py
 ```
 
 Available internal hostnames are `postgres`, `mongodb`, `redis`, `chromadb`,
-`qdrant`, `weaviate`, and `milvus`. Host applications can use the published
-`localhost` ports listed in `COMMANDS.md`.
+`qdrant`, `weaviate`, and `milvus`. Host applications can use the published `localhost` ports listed in
+`COMMANDS.md`. Database data is stored in Docker-managed named volumes so
+services started from inside the container and services started from the host
+use the same persistent data.
 
 ## Optional keys and environment variables
 

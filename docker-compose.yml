@@ -17,7 +17,8 @@ services:
       - ./projects:/workspace/projects
       - ./datasets:/workspace/datasets
       - ./models:/workspace/models
-      - ./chroma_data:/workspace/chroma_data
+      - ml_chroma_data:/workspace/chroma_data
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -50,6 +51,7 @@ services:
       MLFLOW_BACKEND_STORE_URI: ${MLFLOW_BACKEND_STORE_URI:-sqlite:////workspace/mlflow.db}
       JUPYTER_TOKEN: ${JUPYTER_TOKEN:-}
       CODE_SERVER_AUTH: ${CODE_SERVER_AUTH:-none}
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-student-ml-env}
       PYTHONUNBUFFERED: "1"
     networks:
       - ml-network
@@ -62,7 +64,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./chroma_data:/chroma/chroma
+      - ml_chroma_data:/chroma/chroma
     environment:
       ANONYMIZED_TELEMETRY: "false"
       IS_PERSISTENT: "TRUE"
@@ -81,7 +83,7 @@ services:
       - "6333:6333"
       - "6334:6334"
     volumes:
-      - ./qdrant_data:/qdrant/storage
+      - ml_qdrant_data:/qdrant/storage
     networks:
       - ml-network
     healthcheck:
@@ -97,7 +99,7 @@ services:
       - "8081:8080"
       - "50051:50051"
     volumes:
-      - ./weaviate_data:/var/lib/weaviate
+      - ml_weaviate_data:/var/lib/weaviate
     environment:
       QUERY_DEFAULTS_LIMIT: "25"
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
@@ -115,7 +117,7 @@ services:
       - "19530:19530"
       - "9091:9091"
     volumes:
-      - ./milvus_data:/var/lib/milvus
+      - ml_milvus_data:/var/lib/milvus
     networks:
       - ml-network
 
@@ -125,7 +127,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ml_postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -144,8 +146,8 @@ services:
     ports:
       - "${MONGO_PORT:-27017}:27017"
     volumes:
-      - ./mongodb_data:/data/db
-      - ./mongodb_config:/data/configdb
+      - ml_mongodb_data:/data/db
+      - ml_mongodb_config:/data/configdb
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-admin}
@@ -158,7 +160,7 @@ services:
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - ./redis_data:/data
+      - ml_redis_data:/data
     networks:
       - ml-network
     command: ["redis-server", "--appendonly", "yes"]
@@ -200,3 +202,13 @@ networks:
   ml-network:
     name: ml-network
     driver: bridge
+
+volumes:
+  ml_chroma_data:
+  ml_qdrant_data:
+  ml_weaviate_data:
+  ml_milvus_data:
+  ml_postgres_data:
+  ml_mongodb_data:
+  ml_mongodb_config:
+  ml_redis_data:

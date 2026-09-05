@@ -48,6 +48,35 @@ docker compose exec ml-ide ml-env mlflow
 These commands stay attached to the terminal. Press `Ctrl-C` to stop the
 application without stopping the rest of the environment.
 
+The container also includes Compose control commands. Because the Compose
+workflow mounts the Docker socket, these can start sibling services from
+inside `ml-ide`:
+
+```bash
+docker compose exec ml-ide ml-env service postgres
+docker compose exec ml-ide ml-env service qdrant
+docker compose exec ml-ide ml-env service redis
+```
+
+Start a technology-stack preset:
+
+```bash
+docker compose exec ml-ide ml-env stack python_only
+docker compose exec ml-ide ml-env stack data_analyst
+docker compose exec ml-ide ml-env stack machine_learning
+docker compose exec ml-ide ml-env stack genai
+docker compose exec ml-ide ml-env stack ai
+```
+
+Presets are shortcuts, not restrictions. You can always start exactly one
+service with `ml-env service NAME`. Available individual services are
+`postgres`, `mongodb`, `redis`, `chromadb`, `qdrant`, `weaviate`, `milvus`,
+`pgadmin`, and `mongo-express`.
+
+In-container service control requires the Compose setup, which mounts the host
+Docker socket. The standalone Docker Hub `docker run` command intentionally
+does not mount that socket.
+
 Open a shell or run Python:
 
 ```bash
@@ -123,5 +152,4 @@ docker compose down
 ```
 
 Do not use `docker compose down --volumes` unless you intentionally want to
-delete Docker-managed volumes. Bind-mounted data directories remain on the
-host.
+delete the database and vector-store named volumes.

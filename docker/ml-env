@@ -11,6 +11,8 @@ Commands:
   tensorboard       Start TensorBoard (port TENSORBOARD_PORT)
   streamlit FILE    Start a Streamlit app (port STREAMLIT_PORT)
   mlflow            Start the MLflow tracking UI (port MLFLOW_PORT)
+  service NAME      Start one Compose service (postgres, qdrant, etc.)
+  stack NAME        Start a tech-stack preset
   shell             Open a shell in the workspace
   python [args]     Run Python with the installed ML environment
   help              Show this help
@@ -18,6 +20,56 @@ Commands:
 Optional settings and API keys can be exported in the current shell before
 running a command. Child processes inherit them automatically.
 EOF
+}
+
+compose() {
+    if command -v docker-compose >/dev/null 2>&1; then
+        docker-compose -p "${COMPOSE_PROJECT_NAME:-student-ml-env}" -f /workspace/docker-compose.yml "$@"
+    elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+        docker compose -p "${COMPOSE_PROJECT_NAME:-student-ml-env}" -f /workspace/docker-compose.yml "$@"
+    else
+        echo "Docker Compose is unavailable inside this container." >&2
+        echo "Use the host command: docker compose up -d SERVICE" >&2
+        exit 1
+    fi
+}
+
+start_service() {
+    case "$1" in
+        ml-ide|postgres|mongodb|redis|chromadb|qdrant|weaviate|milvus|pgadmin|mongo-express)
+            compose up -d "$1"
+            ;;
+        *)
+            echo "Unknown service: $1" >&2
+            echo "Use: postgres mongodb redis chromadb qdrant weaviate milvus pgadmin mongo-express" >&2
+            exit 2
+            ;;
+    esac
+}
+
+start_stack() {
+    case "$1" in
+        python_only)
+            compose up -d ml-ide
+            ;;
+        data_analyst)
+            compose up -d ml-ide postgres mongodb redis
+            ;;
+        machine_learning)
+            compose up -d ml-ide postgres redis
+            ;;
+        genai)
+            compose up -d ml-ide chromadb qdrant
+            ;;
+        ai)
+            compose up -d ml-ide postgres mongodb redis chromadb qdrant weaviate milvus
+            ;;
+        *)
+            echo "Unknown stack: $1" >&2
+            echo "Use: python_only data_analyst machine_learning genai ai" >&2
+            exit 2
+            ;;
+    esac
 }
 
 port_or_default() {
@@ -75,6 +127,14 @@ case "${1:-help}" in
             --port="$(port_or_default MLFLOW_PORT 5000)" \
             --backend-store-uri="${MLFLOW_BACKEND_STORE_URI:-sqlite:////workspace/mlflow.db}" \
             "$@"
+        ;;
+    service)
+        [ "$#" -eq 2 ] || { echo "Usage: ml-env service NAME" >&2; exit 2; }
+        start_service "$2"
+        ;;
+    stack)
+        [ "$#" -eq 2 ] || { echo "Usage: ml-env stack NAME" >&2; exit 2; }
+        start_stack "$2"
         ;;
     shell)
         exec /bin/sh
