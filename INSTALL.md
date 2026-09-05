@@ -15,6 +15,24 @@ docker run -d --name ml-workspace \
 
 Open http://localhost:8080.
 
+Publish additional service ports if you will launch those services later from
+inside the same container:
+
+```bash
+docker run -d --name ml-workspace \
+  -p 8080:8080 -p 8888:8888 -p 6006:6006 -p 8501:8501 -p 5000:5000 \
+  ankitsurana/student-ml-env:latest
+```
+
+Then launch them without rebuilding:
+
+```bash
+docker exec -it ml-workspace ml-env jupyter
+docker exec -it ml-workspace ml-env tensorboard
+docker exec -it ml-workspace ml-env streamlit /workspace/projects/app.py
+docker exec -it ml-workspace ml-env mlflow
+```
+
 To add optional provider keys, supply them at runtime. They are never stored
 in the image:
 
@@ -30,6 +48,15 @@ For several values, use a private file:
 ```bash
 docker run -d --name ml-workspace -p 8080:8080 \
   --env-file .env ankitsurana/student-ml-env:latest
+```
+
+You can also set values after entering the running container:
+
+```bash
+docker exec -it ml-workspace ml-env shell
+export OPENAI_API_KEY='your-key'
+export MODEL_NAME='local-model'
+ml-env python /workspace/projects/example.py
 ```
 
 ## Compose with optional databases

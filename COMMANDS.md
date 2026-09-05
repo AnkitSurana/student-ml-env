@@ -9,9 +9,38 @@ docker compose up -d ml-ide
 Open [VS Code](http://localhost:8080). The default image has no login token
 because the port is published to localhost only.
 
-## Launch services on demand
+## Launch services from inside the container
 
-Run JupyterLab in the IDE container:
+The image includes `ml-env`, so services can be started directly after opening
+a shell in the running container:
+
+```bash
+docker exec -it ml-workspace ml-env help
+docker exec -it ml-workspace ml-env jupyter
+docker exec -it ml-workspace ml-env tensorboard
+docker exec -it ml-workspace ml-env streamlit /workspace/projects/app.py
+docker exec -it ml-workspace ml-env mlflow
+```
+
+The corresponding URLs are JupyterLab on `8888`, TensorBoard on `6006`,
+Streamlit on `8501`, and MLflow on `5000`. The ports must be published when
+the container is created.
+
+To set optional keys from inside the instance, open a shell and export them
+before launching the application:
+
+```bash
+docker exec -it ml-workspace ml-env shell
+export OPENAI_API_KEY='your-key'
+export POSTGRES_HOST=postgres
+ml-env python /workspace/projects/example.py
+```
+
+These exports are inherited by commands started from that shell. They are
+temporary and disappear when the container is recreated; use `docker run -e`,
+`--env-file`, or Compose `.env` for persistent container configuration.
+
+Run JupyterLab directly in the IDE container:
 
 ```bash
 docker compose exec ml-ide ml-env jupyter

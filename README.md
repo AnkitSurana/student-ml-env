@@ -60,20 +60,44 @@ Open **VS Code** at <http://localhost:8080>. The default image starts
 code-server automatically and does not require an API key or login token when
 you publish it to localhost.
 
-## Start services when needed
+## Start services from inside the container
 
-The main container stays focused on the IDE. Start JupyterLab on demand:
+The image includes an `ml-env` launcher. Start services directly inside the
+running instance:
 
 ```bash
+docker exec -it ml-workspace ml-env help
 docker exec -it ml-workspace ml-env jupyter
+docker exec -it ml-workspace ml-env tensorboard
+docker exec -it ml-workspace ml-env streamlit /workspace/projects/app.py
+docker exec -it ml-workspace ml-env mlflow
 ```
 
-Then open <http://localhost:8888>. Open a shell or run a script:
+Open JupyterLab at <http://localhost:8888>, TensorBoard at
+<http://localhost:6006>, Streamlit at <http://localhost:8501>, or MLflow at
+<http://localhost:5000>. Publish the corresponding ports when using
+`docker run`.
+
+Open a shell or run a script:
 
 ```bash
 docker exec -it ml-workspace ml-env shell
 docker exec ml-workspace ml-env python /workspace/projects/example.py
 ```
+
+Inside that shell, optional parameters can be set for the applications:
+
+```bash
+export OPENAI_API_KEY='your-key'
+export POSTGRES_HOST=postgres
+export POSTGRES_PORT=5432
+ml-env python /workspace/projects/example.py
+```
+
+Environment variables exported in a shell are inherited by applications
+started from that shell. They are not persisted when the container is
+recreated. Use `docker run -e`, `--env-file`, or Compose `.env` when values
+must be present every time the container starts.
 
 The standalone Docker Hub image contains database clients, but database
 servers are separate containers. Use the Compose setup below when you need

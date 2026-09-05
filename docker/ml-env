@@ -1,0 +1,94 @@
+#!/bin/sh
+set -eu
+
+usage() {
+    cat <<'EOF'
+Usage: ml-env <command> [arguments]
+
+Commands:
+  code [path]       Start VS Code in the browser (port CODE_SERVER_PORT)
+  jupyter           Start JupyterLab (port JUPYTER_PORT)
+  tensorboard       Start TensorBoard (port TENSORBOARD_PORT)
+  streamlit FILE    Start a Streamlit app (port STREAMLIT_PORT)
+  mlflow            Start the MLflow tracking UI (port MLFLOW_PORT)
+  shell             Open a shell in the workspace
+  python [args]     Run Python with the installed ML environment
+  help              Show this help
+
+Optional settings and API keys can be exported in the current shell before
+running a command. Child processes inherit them automatically.
+EOF
+}
+
+port_or_default() {
+    value="$(printenv "$1" 2>/dev/null || true)"
+    if [ -n "$value" ]; then
+        printf '%s' "$value"
+    else
+        printf '%s' "$2"
+    fi
+}
+
+case "${1:-help}" in
+    code)
+        shift
+        exec code-server \
+            --bind-addr "${CODE_SERVER_BIND_ADDR:-0.0.0.0:$(port_or_default CODE_SERVER_PORT 8080)}" \
+            --auth "${CODE_SERVER_AUTH:-none}" \
+            --disable-telemetry "${1:-/workspace}"
+        ;;
+    jupyter)
+        shift
+        exec jupyter lab \
+            --ip="${JUPYTER_BIND_ADDR:-0.0.0.0}" \
+            --port="$(port_or_default JUPYTER_PORT 8888)" \
+            --no-browser \
+            --allow-root \
+            --ServerApp.token="${JUPYTER_TOKEN:-}" \
+            "$@"
+        ;;
+    tensorboard)
+        shift
+        exec tensorboard \
+            --host="${TENSORBOARD_BIND_ADDR:-0.0.0.0}" \
+            --port="$(port_or_default TENSORBOARD_PORT 6006)" \
+            --logdir="${TENSORBOARD_LOGDIR:-/workspace/logs}" \
+            "$@"
+        ;;
+    streamlit)
+        shift
+        if [ "$#" -eq 0 ]; then
+            echo "streamlit requires an application path, for example: ml-env streamlit app.py" >&2
+            exit 2
+        fi
+        app="$1"
+        shift
+        exec streamlit run "$app" \
+            --server.address="${STREAMLIT_BIND_ADDR:-0.0.0.0}" \
+            --server.port="$(port_or_default STREAMLIT_PORT 8501)" \
+            "$@"
+        ;;
+    mlflow)
+        shift
+        exec mlflow ui \
+            --host="${MLFLOW_BIND_ADDR:-0.0.0.0}" \
+            --port="$(port_or_default MLFLOW_PORT 5000)" \
+            --backend-store-uri="${MLFLOW_BACKEND_STORE_URI:-sqlite:////workspace/mlflow.db}" \
+            "$@"
+        ;;
+    shell)
+        exec /bin/sh
+        ;;
+    python)
+        shift
+        exec python "$@"
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        echo "Unknown command: $1" >&2
+        usage >&2
+        exit 2
+        ;;
+esac

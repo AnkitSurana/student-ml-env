@@ -36,7 +36,7 @@ RUN pip install --upgrade pip setuptools wheel && \
 
 COPY docker/ml-env /usr/local/bin/ml-env
 RUN chmod +x /usr/local/bin/ml-env && \
-    mkdir -p /workspace/.jupyter /workspace/data /workspace/datasets /workspace/models /workspace/notebooks /workspace/projects && \
+    mkdir -p /workspace/.jupyter /workspace/data /workspace/datasets /workspace/logs /workspace/models /workspace/notebooks /workspace/projects && \
     printf '%s\n' \
       "c.ServerApp.ip = '0.0.0.0'" \
       "c.ServerApp.port = 8888" \
@@ -50,4 +50,4 @@ RUN chmod +x /usr/local/bin/ml-env && \
 EXPOSE 8080 8888 5000 6006 8501
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "--auth", "none", "--disable-telemetry", "/workspace"]
+CMD ["ml-env", "code"]
