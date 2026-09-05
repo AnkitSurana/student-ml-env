@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Cross-platform setup script for ML/AI Docker environment"""
 
-import os, sys, shutil, subprocess, platform
+import platform
+import subprocess
+import sys
 from pathlib import Path
 
 class Setup:
@@ -32,20 +34,9 @@ class Setup:
         print("   Download: https://www.docker.com/products/docker-desktop\n")
         return False
     
-    def setup_env(self):
-        print("⚙️  Setting up .env...")
-        env_path = self.script_dir / ".env"
-        if not env_path.exists():
-            shutil.copy(self.script_dir / ".env.example", env_path)
-            print("   ✓ Created from template")
-        print("   ⚠️  Edit .env and add your API keys")
-        print("   Command: nano .env (Mac/Linux) or notepad .env (Windows)\n")
-        input("   Press Enter when done...")
-    
     def build(self):
         print("\n📦 Building Docker image...\n")
-        result = subprocess.run(["docker-compose", "build"], cwd=self.script_dir, 
-                              capture_output=True, text=True)
+        result = subprocess.run(["docker", "compose", "build"], cwd=self.script_dir)
         if result.returncode == 0:
             print("✅ Build complete\n")
             return True
@@ -53,9 +44,8 @@ class Setup:
         return False
     
     def start(self):
-        print("🎬 Starting services...")
-        result = subprocess.run(["docker-compose", "up", "-d"], cwd=self.script_dir,
-                              capture_output=True, text=True)
+        print("🎬 Starting code-server...")
+        result = subprocess.run(["docker", "compose", "up", "-d", "ml-ide"], cwd=self.script_dir)
         if result.returncode == 0:
             print("✅ Services started\n")
             return True
@@ -67,16 +57,11 @@ class Setup:
         print("✅ SETUP COMPLETE!")
         print("="*60)
         print("\n📖 Services:\n")
-        services = {
-            "Jupyter Lab": "http://localhost:8888",
-            "ChromaDB": "http://localhost:8000",
-            "Qdrant": "http://localhost:6333",
-            "Weaviate": "http://localhost:8080",
-            "pgAdmin": "http://localhost:5050",
-        }
-        for name, url in services.items():
-            print(f"   • {name:20} {url}")
-        print(f"\n📖 Get Jupyter token:\n   docker-compose logs ml-jupyter | grep token\n")
+        print("   • VS Code in browser   http://localhost:8080")
+        print("\nStart optional services when needed:")
+        print("   docker compose exec ml-ide ml-env jupyter")
+        print("   docker compose --profile database up -d")
+        print("   docker compose --profile vector up -d")
         print("="*60 + "\n")
     
     def run(self):
@@ -84,7 +69,6 @@ class Setup:
             self.create_directories()
             if not self.check_docker():
                 sys.exit(1)
-            self.setup_env()
             if not self.build():
                 sys.exit(1)
             if not self.start():

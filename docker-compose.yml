@@ -1,102 +1,108 @@
-version: '3.8'
-
 services:
-  ml-jupyter:
+  ml-ide:
     build:
       context: .
       dockerfile: Dockerfile
-    image: comprehensive-ml-env:latest
+    image: ${ML_ENV_IMAGE:-ankitsurana/student-ml-env:latest}
     container_name: ml-workspace
     ports:
-      - "8888:8888"
-      - "6006:6006"
-      - "5000:5000"
-      - "8501:8501"
+      - "${CODE_SERVER_PORT:-8080}:8080"
+      - "${JUPYTER_PORT:-8888}:8888"
+      - "${TENSORBOARD_PORT:-6006}:6006"
+      - "${STREAMLIT_PORT:-8501}:8501"
     volumes:
       - ./notebooks:/workspace/notebooks
       - ./data:/workspace/data
       - ./projects:/workspace/projects
       - ./datasets:/workspace/datasets
       - ./models:/workspace/models
+      - ./chroma_data:/workspace/chroma_data
     environment:
-      - JUPYTER_ENABLE_LAB=yes
-      - PYTHONUNBUFFERED=1
-    env_file:
-      - .env
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY:-}
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+      CODE_SERVER_AUTH: ${CODE_SERVER_AUTH:-none}
+      PYTHONUNBUFFERED: "1"
     networks:
       - ml-network
-    depends_on:
-      - chromadb
-      - qdrant
-      - weaviate
-      - milvus
-      - postgres
-      - mongodb
-      - redis
     stdin_open: true
     tty: true
 
   chromadb:
-    image: chromadb/chroma:latest
+    image: chromadb/chroma:0.4.24
     container_name: chromadb
+    profiles: ["vector"]
     ports:
       - "8000:8000"
     volumes:
       - ./chroma_data:/chroma/chroma
     environment:
-      - CHROMA_DB_IMPL=duckdb+parquet
-      - PERSIST_DIRECTORY=/chroma/chroma
-      - ANONYMIZED_TELEMETRY=false
+      ANONYMIZED_TELEMETRY: "false"
+      IS_PERSISTENT: "TRUE"
     networks:
       - ml-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.10.1
     container_name: qdrant
+    profiles: ["vector"]
     ports:
       - "6333:6333"
       - "6334:6334"
     volumes:
       - ./qdrant_data:/qdrant/storage
-    environment:
-      QDRANT_API_KEY=qdrant-secret-key
     networks:
       - ml-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   weaviate:
-    image: semitechnologies/weaviate:latest
+    image: semitechnologies/weaviate:1.25.5
     container_name: weaviate
+    profiles: ["vector"]
     ports:
-      - "8080:8080"
+      - "8081:8080"
       - "50051:50051"
     volumes:
       - ./weaviate_data:/var/lib/weaviate
     environment:
-      QUERY_DEFAULTS_LIMIT: 25
+      QUERY_DEFAULTS_LIMIT: "25"
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
       PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
       DEFAULT_VECTORIZER_MODULE: "none"
+      ENABLE_MODULES: ""
     networks:
       - ml-network
 
   milvus:
-    image: milvusdb/milvus:latest
+    image: milvusdb/milvus:v2.4.6
     container_name: milvus
+    profiles: ["vector"]
+    command: ["milvus", "run", "standalone"]
     ports:
       - "19530:19530"
       - "9091:9091"
     volumes:
       - ./milvus_data:/var/lib/milvus
-    environment:
-      COMMON_STORAGETYPE: local
     networks:
       - ml-network
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: postgres-db
+    profiles: ["database"]
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     environment:
@@ -105,12 +111,18 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-ml_database}
     networks:
       - ml-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   mongodb:
     image: mongo:7
     container_name: mongodb
+    profiles: ["database"]
     ports:
-      - "27017:27017"
+      - "${MONGO_PORT:-27017}:27017"
     volumes:
       - ./mongodb_data:/data/db
       - ./mongodb_config:/data/configdb
@@ -123,32 +135,41 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
+    profiles: ["database"]
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - ./redis_data:/data
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis-password}
     networks:
       - ml-network
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8
     container_name: pgadmin
+    profiles: ["admin"]
     ports:
-      - "5050:80"
+      - "${PGADMIN_PORT:-5050}:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
     networks:
       - ml-network
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   mongo-express:
-    image: mongo-express:latest
+    image: mongo-express:1
     container_name: mongo-express
+    profiles: ["admin"]
     ports:
-      - "8081:8081"
+      - "${MONGO_EXPRESS_PORT:-8082}:8081"
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER:-admin}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD:-admin}
