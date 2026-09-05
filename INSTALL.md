@@ -79,6 +79,22 @@ docker compose exec ml-ide ml-env jupyter
 docker compose ps
 ```
 
+From the repository directory, service controls are also available outside
+the container:
+
+```bash
+./ml-env service postgres
+./ml-env services
+```
+
+On Windows PowerShell, run the wrapper through Git Bash/WSL, or use the
+equivalent Docker command:
+
+```powershell
+docker compose exec -it ml-ide ml-env service postgres
+docker compose exec -it ml-ide ml-env services
+```
+
 No `.env` file is required. Copy `.env.example` to `.env` only when you want
 to set optional keys or override ports and local database credentials.
 

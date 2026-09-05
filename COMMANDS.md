@@ -54,15 +54,23 @@ inside `ml-ide`. Each command prompts for service settings, saves them to
 `/workspace/.env`, starts the service, and validates connectivity:
 
 ```bash
-docker compose exec -it ml-ide ml-env service postgres
-docker compose exec -it ml-ide ml-env service qdrant
-docker compose exec -it ml-ide ml-env service redis
+./ml-env service postgres
+./ml-env service qdrant
+./ml-env service redis
 ```
 
 Choose a service interactively:
 
 ```bash
-docker compose exec -it ml-ide ml-env services
+./ml-env services
+```
+
+The host wrapper enters `ml-ide` and runs the same interactive command inside
+the container. If you are already inside `ml-ide`, run:
+
+```bash
+ml-env service postgres
+ml-env services
 ```
 
 Available individual services are

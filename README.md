@@ -80,25 +80,42 @@ other settings, saves them to `/workspace/.env`, starts the service, and
 validates connectivity:
 
 ```bash
-docker compose exec -it ml-ide ml-env service postgres
-docker compose exec -it ml-ide ml-env service qdrant
-docker compose exec -it ml-ide ml-env service redis
+./ml-env service postgres
+./ml-env service qdrant
+./ml-env service redis
 ```
 
 Or choose a service interactively:
 
 ```bash
-docker compose exec -it ml-ide ml-env services
+./ml-env services
 ```
 
 Supported services include `postgres`, `mongodb`,
 `redis`, `chromadb`, `qdrant`, `weaviate`, `milvus`, `pgadmin`, and
 `mongo-express`.
 
-These in-container service controls are available in the Compose image because
-it mounts `/var/run/docker.sock`. A standalone Docker Hub `docker run` does
-not mount that socket, so use Compose when you want `ml-env service` to start
-sibling containers.
+The host wrapper enters `ml-ide` and runs the same interactive command inside
+it. If you are already inside the container, use:
+
+```bash
+ml-env service postgres
+ml-env services
+```
+
+These service controls require the Compose setup because it mounts
+`/var/run/docker.sock`. A standalone Docker Hub `docker run` starts only the
+IDE/Python container unless you explicitly provide the Docker socket and a
+Compose project file.
+
+The host wrapper also provides:
+
+```bash
+./ml-env start
+./ml-env status
+./ml-env logs ml-ide
+./ml-env stop
+```
 
 Each prompt shows a default. Press Enter to accept it, type a value to
 override it, or type `file` to edit `/workspace/.env` in VS Code or a shell.
