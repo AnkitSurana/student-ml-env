@@ -1,117 +1,45 @@
 # Student ML Environment
 
-A portable Docker ML workspace with the Python packages, browser-based VS
-Code, JupyterLab, and optional local databases already installed. It works on
-Windows, macOS, and Linux wherever Docker Desktop or Docker Engine is
-available.
+A portable Docker machine-learning environment for Windows, macOS, and Linux.
+It provides browser-based VS Code, JupyterLab, the Python ML stack, local
+databases, vector databases, and admin tools.
+
+## How the environment works
+
+Use **Docker Compose** as the normal entry point. One Compose command starts
+the complete environment. Docker creates separate containers internally
+because databases and admin tools are maintained as separate services, but
+users operate them as one project:
+
+```text
+Compose project
+├── ml-ide       VS Code, Python, JupyterLab, MLflow, TensorBoard, Streamlit
+├── databases    PostgreSQL, MongoDB, Redis
+├── vector stores ChromaDB, Qdrant, Weaviate, Milvus
+└── admin tools  pgAdmin, Mongo Express
+```
+
+All services share the `ml-network` network. From the IDE container, use
+service names such as `postgres` or `qdrant`; do not use `localhost` for
+sibling containers.
 
 ## Requirements
-
-Install Docker Desktop on Windows/macOS, or Docker Engine plus the Compose
-plugin on Linux:
 
 - Windows 10/11: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
   with the WSL 2 backend.
 - macOS: Docker Desktop for Apple Silicon or Intel.
-- Linux: Docker Engine and `docker compose`.
+- Linux: Docker Engine and the Docker Compose plugin.
 
-Check the installation:
+Verify the installation:
 
-```text
+```bash
 docker --version
 docker compose version
 ```
 
-## Fastest start: Docker Hub
+## Recommended installation
 
-Create directories for files that should survive container replacement, then
-start the image. The commands below use POSIX shell syntax (macOS/Linux,
-Git Bash, or WSL):
-
-```bash
-mkdir -p projects notebooks data datasets models
-docker run -d --name ml-workspace \
-  -p 8080:8080 \
-  -p 8888:8888 \
-  -v "$PWD/projects:/workspace/projects" \
-  -v "$PWD/notebooks:/workspace/notebooks" \
-  -v "$PWD/data:/workspace/data" \
-  -v "$PWD/datasets:/workspace/datasets" \
-  -v "$PWD/models:/workspace/models" \
-  ankitsurana/student-ml-env:latest
-```
-
-Windows PowerShell equivalent:
-
-```powershell
-New-Item -ItemType Directory -Force projects,notebooks,data,datasets,models
-docker run -d --name ml-workspace `
-  -p 8080:8080 `
-  -p 8888:8888 `
-  -v "${PWD}\projects:/workspace/projects" `
-  -v "${PWD}\notebooks:/workspace/notebooks" `
-  -v "${PWD}\data:/workspace/data" `
-  -v "${PWD}\datasets:/workspace/datasets" `
-  -v "${PWD}\models:/workspace/models" `
-  ankitsurana/student-ml-env:latest
-```
-
-Open **VS Code** at <http://localhost:8080>. The default image starts
-code-server automatically and does not require an API key or login token when
-you publish it to localhost.
-
-## Start services from inside the container
-
-The image includes an `ml-env` launcher. Start services directly inside the
-running instance:
-
-```bash
-docker exec -it ml-workspace ml-env help
-docker exec -it ml-workspace ml-env jupyter
-docker exec -it ml-workspace ml-env tensorboard
-docker exec -it ml-workspace ml-env streamlit /workspace/projects/app.py
-docker exec -it ml-workspace ml-env mlflow
-```
-
-Open JupyterLab at <http://localhost:8888>, TensorBoard at
-<http://localhost:6006>, Streamlit at <http://localhost:8501>, or MLflow at
-<http://localhost:5000>. Publish the corresponding ports when using
-`docker run`.
-
-Open a shell or run a script:
-
-```bash
-docker exec -it ml-workspace ml-env shell
-docker exec ml-workspace ml-env python /workspace/projects/example.py
-```
-
-Inside that shell, optional parameters can be set for the applications:
-
-```bash
-export OPENAI_API_KEY='your-key'
-export POSTGRES_HOST=postgres
-export POSTGRES_PORT=5432
-ml-env python /workspace/projects/example.py
-```
-
-Environment variables exported in a shell are inherited by applications
-started from that shell. They are not persisted when the container is
-recreated. Use `docker run -e`, `--env-file`, or Compose `.env` when values
-must be present every time the container starts.
-
-The standalone Docker Hub image contains database clients, but database
-servers are separate containers. Use the Compose setup below when you need
-local PostgreSQL, MongoDB, Redis, or vector databases.
-
-## Compose setup: one environment, one network
-
-The Docker Hub image by itself is only the IDE container; it cannot start or
-discover sibling database containers. Use the repository's Compose project
-when you want the complete environment. Compose runs one `ml-ide` container
-plus the database/admin containers, attaches all of them to the same
-`ml-network`, and provides DNS names such as `postgres` and `qdrant`.
-
-Clone the repository, then start the complete environment:
+Clone the repository and start the complete environment:
 
 ```bash
 git clone https://github.com/AnkitSurana/student-ml-env.git
@@ -119,108 +47,111 @@ cd student-ml-env
 docker compose up -d
 ```
 
-Users operate one environment even though Docker uses separate containers:
+Open VS Code at <http://localhost:8080>. Check all containers:
 
 ```bash
 docker compose ps
 docker compose logs -f ml-ide
+```
+
+Stop the complete environment:
+
+```bash
 docker compose down
 ```
 
-From the IDE container, use these service names as hostnames:
-`postgres`, `mongodb`, `redis`, `chromadb`, `qdrant`, `weaviate`, and `milvus`.
-For example:
+See `COMMANDS.md` for the full command list and service URLs.
+
+## Launch applications inside Docker
+
+The `ml-ide` container starts code-server automatically. Other applications
+are launched directly from the same container with `ml-env`:
 
 ```bash
+docker compose exec ml-ide ml-env jupyter
+docker compose exec ml-ide ml-env tensorboard
+docker compose exec ml-ide ml-env streamlit /workspace/projects/app.py
+docker compose exec ml-ide ml-env mlflow
+```
+
+Open JupyterLab at <http://localhost:8888>, TensorBoard at
+<http://localhost:6006>, Streamlit at <http://localhost:8501>, and MLflow at
+<http://localhost:5000>. All application ports are already published by
+Compose.
+
+Run a shell or Python script:
+
+```bash
+docker compose exec -it ml-ide ml-env shell
+docker compose exec ml-ide ml-env python /workspace/projects/example.py
+```
+
+## Connect to databases
+
+The database and vector services are already on the same Docker network:
+
+```bash
+docker compose exec -it ml-ide ml-env shell
 export POSTGRES_HOST=postgres
+export POSTGRES_PORT=5432
 export QDRANT_HOST=qdrant
+export QDRANT_PORT=6333
 ml-env python /workspace/projects/example.py
 ```
 
-Stop the environment:
+Available internal hostnames are `postgres`, `mongodb`, `redis`, `chromadb`,
+`qdrant`, `weaviate`, and `milvus`. Host applications can use the published
+`localhost` ports listed in `COMMANDS.md`.
+
+## Optional keys and environment variables
+
+No API keys are required to start the environment. To configure integrations,
+copy the example file and edit the copy:
 
 ```bash
-docker compose down
-# Add --volumes only when you intentionally want to delete named volumes.
+cp .env.example .env                 # macOS/Linux/Git Bash/WSL
+Copy-Item .env.example .env          # Windows PowerShell
+docker compose up -d
 ```
 
-## API keys and runtime configuration
+The `.env` file is ignored by Git. You can also export values from an
+interactive shell inside `ml-ide`:
 
-API keys are optional. Do not put secrets in the Dockerfile or commit them to
-Git. Supply a key when creating the container:
+```bash
+docker compose exec -it ml-ide ml-env shell
+export OPENAI_API_KEY='your-key'
+export MODEL_NAME='your-model'
+ml-env python /workspace/projects/example.py
+```
+
+Those exports are inherited by applications launched from that shell. Use
+`.env` when a value must be supplied every time the container starts.
+
+## Docker Hub image
+
+The Docker Hub image is useful when you only need the IDE and Python
+environment:
 
 ```bash
 docker run -d --name ml-workspace \
   -p 8080:8080 \
-  -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+  -v "$PWD/projects:/workspace/projects" \
   ankitsurana/student-ml-env:latest
 ```
 
-For multiple values, create a private file from `.env.example` and pass it at
-creation time:
+This standalone command does **not** start sibling databases. Use the Compose
+workflow above for the complete, networked environment.
 
-```bash
-docker run -d --name ml-workspace \
-  -p 8080:8080 \
-  --env-file .env \
-  ankitsurana/student-ml-env:latest
-```
+## Local build
 
-With Compose, copy `.env.example` to `.env` in the repository directory and
-run `docker compose up -d`. The `.env` file is ignored by Git and is not
-required for the default setup.
-
-### Can I add configuration after `docker run`?
-
-Yes, but the method matters:
-
-1. **Environment variables:** Docker does not add new container environment
-   variables to an already-created container. Stop and recreate it with
-   `--env-file` or `-e`:
-
-   ```bash
-   docker rm -f ml-workspace
-   docker run -d --name ml-workspace -p 8080:8080 \
-     --env-file .env ankitsurana/student-ml-env:latest
-   ```
-
-2. **Configuration files:** Mount a host directory or file into the
-   workspace, then applications can read it without rebuilding the image:
-
-   ```bash
-   mkdir -p config
-   docker run -d --name ml-workspace -p 8080:8080 \
-     -v "$PWD/config:/workspace/config" \
-     ankitsurana/student-ml-env:latest
-   ```
-
-   Put application configuration in `/workspace/config` and have your code
-   read it from there. This is the best option when users need to edit
-   settings from inside the running instance.
-
-3. **One-off commands:** For a temporary value, pass it only to a command:
-
-   ```bash
-   docker exec -e OPENAI_API_KEY="$OPENAI_API_KEY" \
-     ml-workspace ml-env python /workspace/projects/example.py
-   ```
-
-   This value is available to that process and is not persisted.
-
-Do not expose code-server to the public internet without adding
-authentication and TLS. The default `--auth none` behavior is intended for
-localhost-only development.
-
-## Build locally
-
-Use the repository setup helper:
+Use the cross-platform helper:
 
 ```bash
 python3 setup.py       # macOS/Linux
 python setup.py        # Windows
 ```
 
-Or run the shell helper on macOS/Linux, Git Bash, or WSL:
+Or on macOS/Linux, Git Bash, or WSL:
 
 ```bash
 bash setup.sh
@@ -233,5 +164,5 @@ docker compose build ml-ide
 docker compose up -d
 ```
 
-See `COMMANDS.md` for lifecycle and service commands and `INSTALL.md` for
-platform-specific installation notes.
+Do not expose code-server publicly without authentication and TLS. The
+default no-token mode is intended for localhost-only development.
