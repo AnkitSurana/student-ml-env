@@ -1,53 +1,67 @@
-# 📥 Installation Guide
+# Installation
 
-## Quick Start
+## Docker Hub image
+
+Install Docker Desktop (Windows/macOS) or Docker Engine and Compose (Linux).
+The image does not require API keys or a repository checkout for the IDE:
 
 ```bash
-# All OS
-python setup.py
+docker run -d --name ml-workspace \
+  -p 8080:8080 \
+  -v "$PWD/projects:/workspace/projects" \
+  -v "$PWD/notebooks:/workspace/notebooks" \
+  ankitsurana/student-ml-env:latest
+```
 
-# Or Mac/Linux
+Open http://localhost:8080.
+
+To add optional provider keys, supply them at runtime. They are never stored
+in the image:
+
+```bash
+docker run -d --name ml-workspace \
+  -p 8080:8080 \
+  -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+  ankitsurana/student-ml-env:latest
+```
+
+For several values, use a private file:
+
+```bash
+docker run -d --name ml-workspace -p 8080:8080 \
+  --env-file .env ankitsurana/student-ml-env:latest
+```
+
+## Compose with optional databases
+
+Clone the repository when you want persistent bind mounts and database
+containers:
+
+```bash
+git clone https://github.com/AnkitSurana/student-ml-env.git
+cd student-ml-env
+docker compose up -d ml-ide
+```
+
+The default command starts only code-server. Start JupyterLab from the IDE
+container or start database profiles when needed:
+
+```bash
+docker compose exec ml-ide ml-env jupyter
+docker compose --profile database up -d
+docker compose --profile vector up -d
+```
+
+No `.env` file is required. Copy `.env.example` to `.env` only when you want
+to set optional keys or override ports and local database credentials.
+
+## Local build
+
+```bash
+python3 setup.py
+# or
 bash setup.sh
 ```
 
-## Windows Setup
-
-1. Install Docker Desktop: https://www.docker.com/products/docker-desktop
-2. Enable WSL2 when prompted
-3. Restart computer
-4. Clone repo: `git clone https://github.com/your-org/student-ml-env.git`
-5. Run: `python setup.py`
-
-## macOS Setup
-
-1. Install Docker Desktop: https://www.docker.com/products/docker-desktop
-2. Launch Docker from Applications
-3. Clone repo: `git clone https://github.com/your-org/student-ml-env.git`
-4. Run: `python3 setup.py`
-
-## Linux Setup
-
-```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install docker.io docker-compose
-sudo usermod -aG docker $USER
-newgrp docker
-
-# Clone & setup
-git clone https://github.com/your-org/student-ml-env.git
-cd student-ml-env
-python3 setup.py
-```
-
-## Troubleshooting
-
-**Docker not found**: Install Docker Desktop first
-
-**Port in use**: Edit docker-compose.yml and change ports
-
-**Out of memory**: Increase Docker resources (4GB+ RAM, 20GB+ disk)
-
-**Containers won't start**: Run `docker-compose logs` to view errors
-
-See INSTALL.md for detailed guides.
+The setup helpers build the image and start code-server without pausing for
+credentials. See `COMMANDS.md` for service and lifecycle commands.
