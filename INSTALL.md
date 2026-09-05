@@ -59,7 +59,7 @@ export MODEL_NAME='local-model'
 ml-env python /workspace/projects/example.py
 ```
 
-## Compose with optional databases
+## Compose with the complete environment
 
 Clone the repository when you want persistent bind mounts and database
 containers:
@@ -67,16 +67,16 @@ containers:
 ```bash
 git clone https://github.com/AnkitSurana/student-ml-env.git
 cd student-ml-env
-docker compose up -d ml-ide
+docker compose up -d
 ```
 
-The default command starts only code-server. Start JupyterLab from the IDE
-container or start database profiles when needed:
+This starts one complete Compose environment. Docker may show several
+containers internally, but users manage them as one project on the shared
+`ml-network`:
 
 ```bash
 docker compose exec ml-ide ml-env jupyter
-docker compose --profile database up -d
-docker compose --profile vector up -d
+docker compose ps
 ```
 
 No `.env` file is required. Copy `.env.example` to `.env` only when you want

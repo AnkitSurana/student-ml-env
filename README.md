@@ -103,33 +103,39 @@ The standalone Docker Hub image contains database clients, but database
 servers are separate containers. Use the Compose setup below when you need
 local PostgreSQL, MongoDB, Redis, or vector databases.
 
-## Compose setup with optional databases
+## Compose setup: one environment, one network
 
-Clone the repository, then run the IDE:
+The Docker Hub image by itself is only the IDE container; it cannot start or
+discover sibling database containers. Use the repository's Compose project
+when you want the complete environment. Compose runs one `ml-ide` container
+plus the database/admin containers, attaches all of them to the same
+`ml-network`, and provides DNS names such as `postgres` and `qdrant`.
+
+Clone the repository, then start the complete environment:
 
 ```bash
 git clone https://github.com/AnkitSurana/student-ml-env.git
 cd student-ml-env
-docker compose up -d ml-ide
+docker compose up -d
 ```
 
-Start service groups only when required:
+Users operate one environment even though Docker uses separate containers:
 
 ```bash
-docker compose --profile database up -d  # PostgreSQL, MongoDB, Redis
-docker compose --profile vector up -d    # ChromaDB, Qdrant, Weaviate, Milvus
-docker compose --profile admin up -d     # pgAdmin and Mongo Express
-```
-
-Start one service:
-
-```bash
-docker compose --profile database up -d postgres
-docker compose --profile vector up -d qdrant
+docker compose ps
+docker compose logs -f ml-ide
+docker compose down
 ```
 
 From the IDE container, use these service names as hostnames:
 `postgres`, `mongodb`, `redis`, `chromadb`, `qdrant`, `weaviate`, and `milvus`.
+For example:
+
+```bash
+export POSTGRES_HOST=postgres
+export QDRANT_HOST=qdrant
+ml-env python /workspace/projects/example.py
+```
 
 Stop the environment:
 
@@ -161,8 +167,8 @@ docker run -d --name ml-workspace \
 ```
 
 With Compose, copy `.env.example` to `.env` in the repository directory and
-run `docker compose up -d ml-ide`. The `.env` file is ignored by Git and is
-not required for the default setup.
+run `docker compose up -d`. The `.env` file is ignored by Git and is not
+required for the default setup.
 
 ### Can I add configuration after `docker run`?
 
@@ -224,7 +230,7 @@ Manual build:
 
 ```bash
 docker compose build ml-ide
-docker compose up -d ml-ide
+docker compose up -d
 ```
 
 See `COMMANDS.md` for lifecycle and service commands and `INSTALL.md` for

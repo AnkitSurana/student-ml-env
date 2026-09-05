@@ -3,7 +3,7 @@
 ## Start the IDE
 
 ```bash
-docker compose up -d ml-ide
+docker compose up -d
 ```
 
 Open [VS Code](http://localhost:8080). The default image has no login token
@@ -49,19 +49,13 @@ docker compose exec ml-ide ml-env jupyter
 Then open [JupyterLab](http://localhost:8888). Stop it with `Ctrl-C` in the
 attached command or use `docker compose exec ml-ide pkill -f 'jupyter lab'`.
 
-Start database groups only when needed:
+All services are attached to the same `ml-network`. Start, inspect, and stop
+the complete environment with:
 
 ```bash
-docker compose --profile database up -d     # PostgreSQL, MongoDB, Redis
-docker compose --profile vector up -d       # Chroma, Qdrant, Weaviate, Milvus
-docker compose --profile admin up -d        # pgAdmin and Mongo Express
-```
-
-Run a single service:
-
-```bash
-docker compose --profile database up -d postgres
-docker compose --profile vector up -d qdrant
+docker compose up -d
+docker compose ps
+docker compose down
 ```
 
 From Python, use the Compose service names (`postgres`, `mongodb`, `redis`,

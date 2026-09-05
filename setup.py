@@ -44,8 +44,8 @@ class Setup:
         return False
     
     def start(self):
-        print("🎬 Starting code-server...")
-        result = subprocess.run(["docker", "compose", "up", "-d", "ml-ide"], cwd=self.script_dir)
+        print("🎬 Starting the ML environment...")
+        result = subprocess.run(["docker", "compose", "up", "-d"], cwd=self.script_dir)
         if result.returncode == 0:
             print("✅ Services started\n")
             return True
@@ -58,10 +58,9 @@ class Setup:
         print("="*60)
         print("\n📖 Services:\n")
         print("   • VS Code in browser   http://localhost:8080")
-        print("\nStart optional services when needed:")
+        print("\nAll services share the ml-network network:")
+        print("   docker compose ps")
         print("   docker compose exec ml-ide ml-env jupyter")
-        print("   docker compose --profile database up -d")
-        print("   docker compose --profile vector up -d")
         print("="*60 + "\n")
     
     def run(self):

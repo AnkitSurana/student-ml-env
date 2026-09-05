@@ -12,13 +12,13 @@ echo "✅ Created directories"
 echo "📦 Building Docker image..."
 docker compose build
 
-# Start the IDE only
-echo "🎬 Starting code-server..."
-docker compose up -d ml-ide
+# Start the single Compose environment
+echo "🎬 Starting the ML environment..."
+docker compose up -d
 
 echo ""
 echo "✅ Setup complete!"
 echo "📖 Open VS Code at: http://localhost:8080"
 echo "📖 Start Jupyter: docker compose exec ml-ide ml-env jupyter"
-echo "📖 Start databases: docker compose --profile database up -d"
+echo "📖 Check services: docker compose ps"
 echo ""
