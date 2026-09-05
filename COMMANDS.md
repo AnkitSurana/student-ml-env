@@ -50,32 +50,33 @@ application without stopping the rest of the environment.
 
 The container also includes Compose control commands. Because the Compose
 workflow mounts the Docker socket, these can start sibling services from
-inside `ml-ide`:
+inside `ml-ide`. Each command prompts for service settings, saves them to
+`/workspace/.env`, starts the service, and validates connectivity:
 
 ```bash
-docker compose exec ml-ide ml-env service postgres
-docker compose exec ml-ide ml-env service qdrant
-docker compose exec ml-ide ml-env service redis
+docker compose exec -it ml-ide ml-env service postgres
+docker compose exec -it ml-ide ml-env service qdrant
+docker compose exec -it ml-ide ml-env service redis
 ```
 
-Start a technology-stack preset:
+Choose a service interactively:
 
 ```bash
-docker compose exec ml-ide ml-env stack python_only
-docker compose exec ml-ide ml-env stack data_analyst
-docker compose exec ml-ide ml-env stack machine_learning
-docker compose exec ml-ide ml-env stack genai
-docker compose exec ml-ide ml-env stack ai
+docker compose exec -it ml-ide ml-env services
 ```
 
-Presets are shortcuts, not restrictions. You can always start exactly one
-service with `ml-env service NAME`. Available individual services are
+Available individual services are
 `postgres`, `mongodb`, `redis`, `chromadb`, `qdrant`, `weaviate`, `milvus`,
 `pgadmin`, and `mongo-express`.
 
 In-container service control requires the Compose setup, which mounts the host
 Docker socket. The standalone Docker Hub `docker run` command intentionally
 does not mount that socket.
+
+Each prompt shows a default. Press Enter to accept it, type a value to
+override it, or type `file` to stop and edit `/workspace/.env` in VS Code or
+from a shell. Run the same command again after saving. If validation fails,
+the command reports the host and port to fix and prints the retry command.
 
 Open a shell or run Python:
 

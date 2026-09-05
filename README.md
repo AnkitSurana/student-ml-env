@@ -74,34 +74,37 @@ docker compose exec ml-ide ml-env streamlit /workspace/projects/app.py
 docker compose exec ml-ide ml-env mlflow
 ```
 
-You can also start Compose services from inside the IDE container. The Compose
-setup mounts the Docker socket for this purpose:
+You can also start one Compose service at a time from inside the IDE
+container. The command prompts for that service's host, port, credentials, and
+other settings, saves them to `/workspace/.env`, starts the service, and
+validates connectivity:
 
 ```bash
-docker compose exec ml-ide ml-env service postgres
-docker compose exec ml-ide ml-env service qdrant
-docker compose exec ml-ide ml-env service redis
+docker compose exec -it ml-ide ml-env service postgres
+docker compose exec -it ml-ide ml-env service qdrant
+docker compose exec -it ml-ide ml-env service redis
 ```
 
-Use a technology-stack preset when you want a prepared group:
+Or choose a service interactively:
 
 ```bash
-docker compose exec ml-ide ml-env stack python_only
-docker compose exec ml-ide ml-env stack data_analyst
-docker compose exec ml-ide ml-env stack machine_learning
-docker compose exec ml-ide ml-env stack genai
-docker compose exec ml-ide ml-env stack ai
+docker compose exec -it ml-ide ml-env services
 ```
 
-You can still start one service at any time; presets do not force you to run
-the whole environment. Supported services include `postgres`, `mongodb`,
+Supported services include `postgres`, `mongodb`,
 `redis`, `chromadb`, `qdrant`, `weaviate`, `milvus`, `pgadmin`, and
 `mongo-express`.
 
 These in-container service controls are available in the Compose image because
 it mounts `/var/run/docker.sock`. A standalone Docker Hub `docker run` does
-not mount that socket, so use Compose when you want `ml-env service` or
-`ml-env stack` to start sibling containers.
+not mount that socket, so use Compose when you want `ml-env service` to start
+sibling containers.
+
+Each prompt shows a default. Press Enter to accept it, type a value to
+override it, or type `file` to edit `/workspace/.env` in VS Code or a shell.
+Run the same command again after saving. If the service starts but validation
+fails, the command reports the unreachable host or port and gives the retry
+command.
 
 Open JupyterLab at <http://localhost:8888>, TensorBoard at
 <http://localhost:6006>, Streamlit at <http://localhost:8501>, and MLflow at
