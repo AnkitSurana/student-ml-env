@@ -37,7 +37,6 @@ RUN pip install --upgrade pip setuptools wheel && \
     npm cache clean --force
 
 COPY docker/ml-env /usr/local/bin/ml-env
-COPY ml-env /usr/local/bin/ml-env-host
 COPY docker-compose.yml /workspace/docker-compose.yml
 RUN chmod +x /usr/local/bin/ml-env && \
     mkdir -p /workspace/.jupyter /workspace/data /workspace/datasets /workspace/logs /workspace/models /workspace/notebooks /workspace/projects && \

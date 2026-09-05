@@ -14,9 +14,7 @@ class Setup:
     
     def create_directories(self):
         print("📁 Creating directories...")
-        for dir_name in ['notebooks', 'data', 'datasets', 'projects', 'models', 
-                         'chroma_data', 'qdrant_data', 'weaviate_data', 'milvus_data',
-                         'postgres_data', 'mongodb_data', 'redis_data', 'utils']:
+        for dir_name in ['notebooks', 'data', 'datasets', 'projects', 'models']:
             (self.script_dir / dir_name).mkdir(exist_ok=True)
             print(f"   ✓ {dir_name}")
         print("✅ Done\n")
